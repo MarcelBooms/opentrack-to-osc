@@ -8,7 +8,7 @@ import socket
 from pythonosc.udp_client import SimpleUDPClient
 
 def signal_handler(sig, frame):
-    print("\nProgramma gestopt met Ctrl+C")
+    print("\nProgram stopped with Ctrl+C")
     sys.exit(0)
 
 def send_osc_command(x, y, z, yaw, pitch, roll, client, lock, event, last_sent_time):
@@ -24,9 +24,9 @@ def send_osc_command(x, y, z, yaw, pitch, roll, client, lock, event, last_sent_t
         client.send_message("/b/Master/RotoAngleX", pitch)
         client.send_message("/b/Master/RotoAngleY", yaw)
         client.send_message("/b/Master/RotoAngleZ", roll)
-        print(f"OSC commando verzonden: X={x:.2f}, Y={y:.2f}, Z={z:.2f}, Yaw={yaw:.2f}, Pitch={pitch:.2f}, Roll={roll:.2f}")
+        print(f"OSC command sent: X={x:.2f}, Y={y:.2f}, Z={z:.2f}, Yaw={yaw:.2f}, Pitch={pitch:.2f}, Roll={roll:.2f}")
     except Exception as e:
-        print(f"Fout bij verzenden OSC commando: {e}")
+        print(f"Error sending OSC command: {e}")
     finally:
         with lock:
             event.set()
@@ -42,7 +42,7 @@ def receive_udp_data(stdscr, client):
     
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_socket.bind(("", 4242))
-    udp_socket.settimeout(1.0)  # Timeout instellen om te blijven luisteren en Ctrl+C te laten werken
+    udp_socket.settimeout(1.0)  # Set timeout to keep listening and allow Ctrl+C to work
     
     signal.signal(signal.SIGINT, signal_handler)
     
@@ -50,7 +50,7 @@ def receive_udp_data(stdscr, client):
     lock = threading.Lock()
     event = threading.Event()
     event.set()
-    last_sent_time = {"XYZ": 0}  # Tijd bijhouden van laatste verzending van alle assen
+    last_sent_time = {"XYZ": 0}  # Keep track of the last time all axes were sent
     
     while True:
         try:
@@ -82,11 +82,11 @@ def receive_udp_data(stdscr, client):
                 threading.Thread(target=send_osc_command, args=(mapped_x, mapped_y, mapped_z, mapped_yaw, mapped_pitch, mapped_roll, client, lock, event, last_sent_time), daemon=True).start()
         
         except socket.timeout:
-            pass  # Geen data ontvangen, terug naar de loop om Ctrl+C te detecteren
+            pass  # No data received, return to the loop to detect Ctrl+C
         except struct.error:
             stdscr.clear()
-            stdscr.addstr(10, 2, "Onverwachte data ontvangen:")
-            stdscr.addstr(11, 2, f"Ruwe data: {data}")
+            stdscr.addstr(10, 2, "Unexpected data received:")
+            stdscr.addstr(11, 2, f"Raw data: {data}")
             stdscr.refresh()
 
 if __name__ == "__main__":
